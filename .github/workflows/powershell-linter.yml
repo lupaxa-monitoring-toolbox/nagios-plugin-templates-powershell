@@ -1,0 +1,51 @@
+name: PowerShell Linter
+
+on:
+  push:
+    paths:
+      - ".github/workflows/powershell-linter.yml"
+      - "**/*.ps1"
+      - "**/*.psm1"
+      - "**/*.psd1"
+
+  pull_request:
+    branches:
+      - "master"
+    paths:
+      - ".github/workflows/powershell-linter.yml"
+      - "**/*.ps1"
+      - "**/*.psm1"
+      - "**/*.psd1"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  actions: read
+  contents: read
+  pull-requests: read
+
+jobs:
+  powershell-linter:
+    name: PowerShell Linter
+    uses: the-lupaxa-project/workflows/.github/workflows/reusable-powershell-linter.yml@master
+    secrets: inherit
+
+  generate-workflow-summary:
+    name: Generate Workflow Summary
+    needs:
+      - powershell-linter
+    if: always()
+    uses: the-lupaxa-project/workflows/.github/workflows/reusable-workflow-summary.yml@master
+
+  generate-workflow-notifications:
+    name: Generate Workflow Notifications
+    needs:
+      - generate-workflow-summary
+    if: always()
+    uses: the-lupaxa-project/workflows/.github/workflows/reusable-workflow-notifier.yml@master
+    with:
+      notify_on_results: "failure,timed_out"
+    secrets:
+      slack_webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
